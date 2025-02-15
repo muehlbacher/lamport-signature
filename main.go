@@ -22,6 +22,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 )
@@ -56,12 +57,12 @@ func main() {
 	fmt.Printf("Verify worked? %v\n", worked)
 
 	// Forge signature
-	msgString, sig, err := Forge()
+	//msgString, sig, err := Forge()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("forged msg: %s sig: %s\n", msgString, sig.ToHex())
+	//fmt.Printf("forged msg: %s sig: %s\n", msgString, sig.ToHex())
 
 	return
 }
@@ -210,6 +211,17 @@ func GetMessageFromString(s string) Message {
 	return sha256.Sum256([]byte(s))
 }
 
+
+func randomBlock() Block {
+	var b Block
+	_, err := rand.Read(b[:])
+	if err != nil {
+		panic("Failed to generate random Block")
+	}
+
+	return b
+}
+
 // --- Functions
 
 // GenerateKey takes no arguments, and returns a keypair and potentially an
@@ -220,32 +232,65 @@ func GenerateKey() (SecretKey, PublicKey, error) {
 	var sec SecretKey
 	var pub PublicKey
 
-	// Your code here
-	// ===
+	for i := range 256 {
+		sec.ZeroPre[i] = randomBlock()
+		sec.OnePre[i] = randomBlock()
+	}
 
-	// ===
+	for i := range 256 {
+		pub.ZeroHash[i] = sec.ZeroPre[i].Hash()
+		pub.OneHash[i] = sec.OnePre[i].Hash()
+	}
+
 	return sec, pub, nil
 }
 
 // Sign takes a message and secret key, and returns a signature.
 func Sign(msg Message, sec SecretKey) Signature {
 	var sig Signature
+	var flag byte
+	var m byte
 
-	// Your code here
-	// ===
+	for n := range 32 {
+		m = msg[n]
 
-	// ===
+		for i := range 8 {
+			flag = m & 0x80
+			if flag == 0x80 {
+				sig.Preimage[i+(n*8)] = sec.OnePre[i+(n*8)]
+			}
+			if flag == 0 {
+				sig.Preimage[i+(n*8)] = sec.ZeroPre[i+(n*8)]
+			}
+			m = m << 1
+		}
+	}
 	return sig
 }
 
 // Verify takes a message, public key and signature, and returns a boolean
 // describing the validity of the signature.
 func Verify(msg Message, pub PublicKey, sig Signature) bool {
+	var m byte
+	var flag byte
+	for n := range 32 {
+		m = msg[n]
 
-	// Your code here
-	// ===
+		for i := range 8 {
+			flag = m & 0x80
+			if flag == 0x80 {
+				if sig.Preimage[i+(n*8)].Hash() != pub.OneHash[i+(n*8)] {
+					return false
+				}
+			}
+			if flag == 0 {
+				if sig.Preimage[i+(n*8)].Hash() != pub.ZeroHash[i+(n*8)] {
+					return false
+				}
+			}
+			m = m << 1
 
-	// ===
-
+		}
+	}
 	return true
 }
