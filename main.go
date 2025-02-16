@@ -57,12 +57,13 @@ func main() {
 	fmt.Printf("Verify worked? %v\n", worked)
 
 	// Forge signature
-	//msgString, sig, err := Forge()
+	// msgString, sig, err := Forge()	
+	Forge()
 	if err != nil {
 		panic(err)
 	}
 
-	//fmt.Printf("forged msg: %s sig: %s\n", msgString, sig.ToHex())
+	// fmt.Printf("forged msg: %s sig: %s\n", msgString, sig.ToHex())
 
 	return
 }

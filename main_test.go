@@ -11,6 +11,9 @@ import (
 // TestSig generates, signs, and verifies to make sure that flow works
 func TestGoodSig(t *testing.T) {
 
+	fmt.Printf("Test")
+
+
 	// generate message (hash of good)
 	msg := GetMessageFromString("good")
 
@@ -25,6 +28,8 @@ func TestGoodSig(t *testing.T) {
 
 	// verify signature
 	worked := Verify(msg, pub, sig)
+	fmt.Println("Worked?")
+	fmt.Println(worked)
 
 	if !worked {
 		t.Fatalf("Verify returned false, expected true")
@@ -65,6 +70,7 @@ func TestBadSig(t *testing.T) {
 	if worked {
 		t.Fatalf("Verify returned true, expected false")
 	}
+	fmt.Println("Test new")
 }
 
 // TestGoodMany tests 1000 signatures that all should work.
@@ -85,6 +91,7 @@ func TestGoodMany(t *testing.T) {
 			t.Fatalf("Verify returned false, expected true")
 		}
 	}
+	fmt.Println("test new 2")
 }
 
 // TestBadMany tests 1000 signatures, modifying all of them so that they should
@@ -107,4 +114,5 @@ func TestBadMany(t *testing.T) {
 			t.Fatalf("Verify returned true, expected false")
 		}
 	}
+	fmt.Println("test new 3")
 }
