@@ -115,7 +115,7 @@ func Forge() (string, Signature, error) {
 	msgslice = append(msgslice, GetMessageFromString("4"))
 
 	fmt.Printf("ok 1: %v\n", Verify(msgslice[0], pub, sigslice[0]))
-	fmt.Printf("ok 2: %v\n", Verify(msgslice[1], pub, sig2))
+	fmt.Printf("ok 2: %v\n", Verify(msgslice[1], pub, sigslice[1]))
 	fmt.Printf("ok 3: %v\n", Verify(msgslice[2], pub, sig3))
 	fmt.Printf("ok 4: %v\n", Verify(msgslice[3], pub, sig4))
 
@@ -127,8 +127,6 @@ func Forge() (string, Signature, error) {
 
 	msgString := "my forged message"
 	var sig Signature
-
-	
 
 	// your code here!
 	// ==
