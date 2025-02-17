@@ -21,8 +21,8 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 )
@@ -57,7 +57,7 @@ func main() {
 	fmt.Printf("Verify worked? %v\n", worked)
 
 	// Forge signature
-	// msgString, sig, err := Forge()	
+	// msgString, sig, err := Forge()
 	Forge()
 	if err != nil {
 		panic(err)
@@ -211,7 +211,6 @@ func HexToSignature(s string) (Signature, error) {
 func GetMessageFromString(s string) Message {
 	return sha256.Sum256([]byte(s))
 }
-
 
 func randomBlock() Block {
 	var b Block

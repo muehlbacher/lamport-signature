@@ -121,12 +121,30 @@ func Forge() (string, Signature, error) {
 
 	fmt.Println(sig1)
 
-	sig_hash := sig1.Preimage[0].Hash()
+	sig_hash := sig1.Preimage[0].Hash() // == pub
+
+	fmt.Println(sig_hash)
+	fmt.Println(pub.OneHash[0])
+	fmt.Println(pub.ZeroHash[0])
+	if sig_hash == pub.OneHash[0] {
+		fmt.Println("OneHash")
+	}
+	if sig_hash == pub.ZeroHash[0] {
+		fmt.Println("ZeroHash")
+	}
 
 	fmt.Println(sig_hash.ToHex())
 
 	msgString := "my forged message"
 	var sig Signature
+	sig = sig1
+
+	//var secret SecretKey
+
+	make_secret_key(sigslice, msgslice)
+
+	// signature is the preimage from the corresponding row (0,1)
+	// signature has 256x256 (32 Blocks with 8 Bit)
 
 	// your code here!
 	// ==
@@ -135,6 +153,35 @@ func Forge() (string, Signature, error) {
 
 	return msgString, sig, nil
 
+}
+
+func make_secret_key(signatures []Signature, messages []Message) {
+	var sec SecretKey
+	var flag byte
+
+	//signatures: 4 signatures with 256 32 byte blocks corresponding to message
+	//message: 4 messages for the corresponding signature
+	var message = messages[0]
+
+	fmt.Printf("%b", message)
+	fmt.Printf("\n -----------------------")
+	for i := range 256 {
+		flag = message[i/8] >> (7 - (i % 8)) & 0x01
+		if flag == 1 {
+			sec.OnePre[i] = get_value_from_signatures(signatures[0].Preimage[i], signatures)
+		}
+		if flag == 0 {
+			sec.ZeroPre[i]
+		}
+	}
+	return
+}
+
+func get_value_from_signatures(sig1, sig2, sig3, sig4) {
+	// get the 4 signatures under question and search for the correct one
+	// we also need the public key here to check which is the right signature
+	// hash(sig) == pub
+	// sig is a part of the secret key
 }
 
 // hint:
