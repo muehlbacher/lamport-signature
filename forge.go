@@ -116,7 +116,7 @@ func Forge() (string, Signature, error) {
 
 	fmt.Printf("ok 1: %v\n", Verify(msgslice[0], pub, sigslice[0]))
 	fmt.Printf("ok 2: %v\n", Verify(msgslice[1], pub, sigslice[1]))
-	fmt.Printf("ok 3: %v\n", Verify(msgslice[2], pub, sig3))
+	fmt.Printf("ok 3: %v\n", Verify(msgslice[2], pub, sigslice[2]))
 	fmt.Printf("ok 4: %v\n", Verify(msgslice[3], pub, sig4))
 
 	fmt.Println(sig1)
