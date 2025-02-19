@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
+)
 
 /*
 A note about the provided keys and signatures:
@@ -137,15 +141,46 @@ func Forge() (string, Signature, error) {
 
 	msgString := "my forged message"
 	var sig Signature
+	var sec SecretKey
 	sig = sig1
 
 	//var secret SecretKey
 
-	make_secret_key(sigslice, msgslice)
+	sec = make_secret_key(sigslice, msgslice)
+	fmt.Println(sec)
+	//check_my_message(sigslice, msgslice, sec)
+
+	var ones Message
+	var zeros Message
+
+	for i := 0; i < 32; i++ {
+		ones[i] = msgslice[0][i] | msgslice[1][i]
+		ones[i] = ones[i] | msgslice[2][i]
+		ones[i] = ones[i] | msgslice[3][i]
+	}
+	for i := 0; i < 32; i++ {
+		zeros[i] = msgslice[0][i] & msgslice[1][i]
+		zeros[i] = zeros[i] & msgslice[2][i]
+		zeros[i] = zeros[i] & msgslice[3][i]
+	}
+
+	for i := range 4 {
+		fmt.Printf("%08b \n", msgslice[i])
+	}
+
+	fmt.Printf("%08b \n", ones)
+	fmt.Printf("%08b \n", zeros)
+
+	var doable_message = look_for_message(ones, zeros)
+
+	fmt.Println(doable_message)
 
 	// signature is the preimage from the corresponding row (0,1)
 	// signature has 256x256 (32 Blocks with 8 Bit)
 
+	// 11110000
+	// 11110000
+	// 10000000
 	// your code here!
 	// ==
 	// Geordi La
@@ -155,34 +190,93 @@ func Forge() (string, Signature, error) {
 
 }
 
-func make_secret_key(signatures []Signature, messages []Message) {
+func create_message() string {
+	var base = "forge Dominik"
+	n, err := rand.Int(rand.Reader, big.NewInt(9000000000)) // Range: [0, 8999999999]
+	if err != nil {
+		panic(err) // Handle error properly in real applications
+	}
+	return base + n.String()
+}
+
+func look_for_message(ones Message, zeros Message) string {
+	var suprise = create_message()
+	var supr = GetMessageFromString(suprise)
+	var check_zeros Message
+	var check_ones Message
+	var message_not_found = true
+
+	for message_not_found {
+		message_not_found = false
+		suprise = create_message()
+		supr = GetMessageFromString(suprise)
+		for i := 0; i < 32; i++ {
+
+			check_ones[i] = supr[i] & ones[i]
+			check_zeros[i] = supr[i] | zeros[i]
+
+			if check_ones[i] != supr[i] {
+				// no correct message
+				message_not_found = true
+			}
+			if check_zeros[i] != supr[i] {
+				// no correct message
+				message_not_found = true
+			}
+		}
+		fmt.Println(suprise)
+	}
+	return suprise
+}
+
+func make_secret_key(signatures []Signature, messages []Message) SecretKey {
 	var sec SecretKey
 	var flag byte
 
 	//signatures: 4 signatures with 256 32 byte blocks corresponding to message
 	//message: 4 messages for the corresponding signature
 	var message = messages[0]
+	var signature = signatures[0]
 
 	fmt.Printf("%b", message)
 	fmt.Printf("\n -----------------------")
-	for i := range 256 {
-		flag = message[i/8] >> (7 - (i % 8)) & 0x01
-		if flag == 1 {
-			sec.OnePre[i] = get_value_from_signatures(signatures[0].Preimage[i], signatures)
-		}
-		if flag == 0 {
-			sec.ZeroPre[i]
+	for j := range 4 {
+		message = messages[j]
+		signature = signatures[j]
+		for i := range 256 {
+			flag = message[i/8] >> (7 - (i % 8)) & 0x01
+			if flag == 1 {
+				// the Preimage -> secret from onePre
+				sec.OnePre[i] = signature.Preimage[i]
+			}
+			if flag == 0 {
+				// the Preimage -> secret from zeroPro
+				sec.ZeroPre[i] = signature.Preimage[i]
+			}
 		}
 	}
-	return
+
+	for i := range 256 {
+		fmt.Printf("%d : %x \n", i, sec.OnePre[i])
+		fmt.Printf("%d : %x \n", i, sec.ZeroPre[i])
+		fmt.Printf("---------------------------\n")
+	}
+
+	var mymessage = "my forged messsage"
+
+	var mes = GetMessageFromString(mymessage)
+
+	fmt.Printf("%b", mes)
+	return sec
+
 }
 
-func get_value_from_signatures(sig1, sig2, sig3, sig4) {
-	// get the 4 signatures under question and search for the correct one
-	// we also need the public key here to check which is the right signature
-	// hash(sig) == pub
-	// sig is a part of the secret key
-}
+//func get_value_from_signatures(sig1, sig2, sig3, sig4) {
+// get the 4 signatures under question and search for the correct one
+// we also need the public key here to check which is the right signature
+// hash(sig) == pub
+// sig is a part of the secret key
+//}
 
 // hint:
 // arr[i/8]>>(7-(i%8)))&0x01
