@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"runtime"
 	"sync"
 )
 
@@ -125,31 +124,27 @@ func Forge() (string, Signature, error) {
 	fmt.Printf("ok 3: %v\n", Verify(msgslice[2], pub, sigslice[2]))
 	fmt.Printf("ok 4: %v\n", Verify(msgslice[3], pub, sig4))
 
-	fmt.Println(sig1)
+	// fmt.Println(sig_hash)
+	// fmt.Println(pub.OneHash[0])
+	// fmt.Println(pub.ZeroHash[0])
+	// if sig_hash == pub.OneHash[0] {
+	// 	fmt.Println("OneHash")
+	// }
+	// if sig_hash == pub.ZeroHash[0] {
+	// 	fmt.Println("ZeroHash")
+	// }
 
-	sig_hash := sig1.Preimage[0].Hash() // == pub
+	// fmt.Println(sig_hash.ToHex())
 
-	fmt.Println(sig_hash)
-	fmt.Println(pub.OneHash[0])
-	fmt.Println(pub.ZeroHash[0])
-	if sig_hash == pub.OneHash[0] {
-		fmt.Println("OneHash")
-	}
-	if sig_hash == pub.ZeroHash[0] {
-		fmt.Println("ZeroHash")
-	}
-
-	fmt.Println(sig_hash.ToHex())
-
-	msgString := "my forged message"
+	msgString := "forge Dominik5e5ZzrPTKu"
 	var sig Signature
 	var sec SecretKey
-	sig = sig1
-
-	//var secret SecretKey
 
 	sec = make_secret_key(sigslice, msgslice)
-	fmt.Println(sec)
+
+	//fmt.Println(sec)
+	sig = Sign(GetMessageFromString(msgString), sec)
+
 	//check_my_message(sigslice, msgslice, sec)
 
 	var ones Message
@@ -166,12 +161,12 @@ func Forge() (string, Signature, error) {
 		zeros[i] = zeros[i] & msgslice[3][i]
 	}
 
-	for i := range 4 {
-		fmt.Printf("%08b \n", msgslice[i])
-	}
+	// for i := range 4 {
+	// 	fmt.Printf("%08b \n", msgslice[i])
+	// }
 
-	fmt.Printf("%08b \n", ones)
-	fmt.Printf("%08b \n", zeros)
+	//fmt.Printf("%08b \n", ones)
+	//fmt.Printf("%08b \n", zeros)
 
 	//var doable_message = look_for_message(ones, zeros)
 
@@ -179,32 +174,32 @@ func Forge() (string, Signature, error) {
 
 	/////////
 
-	// Create context to cancel all goroutines once we find a message
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // Ensure cleanup
+	// // Create context to cancel all goroutines once we find a message
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel() // Ensure cleanup
 
-	resultChan := make(chan string, 1) // Channel to receive a found message
-	var wg sync.WaitGroup
+	// resultChan := make(chan string, 1) // Channel to receive a found message
+	// var wg sync.WaitGroup
 
-	// Launch multiple workers (e.g., 5 threads)
-	numWorkers := runtime.NumCPU() // Use all available CPU cores
-	fmt.Printf("Number of CPUs: %d", numWorkers)
-	//numWorkers := 5
-	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
-		go look_for_message_multi(ctx, ones, zeros, resultChan, &wg)
-	}
+	// // Launch multiple workers (e.g., 5 threads)
+	// numWorkers := runtime.NumCPU() // Use all available CPU cores
+	// fmt.Printf("Number of CPUs: %d", numWorkers)
+	// //numWorkers := 5
+	// for i := 0; i < numWorkers; i++ {
+	// 	wg.Add(1)
+	// 	go look_for_message_multi(ctx, ones, zeros, resultChan, &wg)
+	// }
 
-	// Wait for the first valid message
-	foundMessage := <-resultChan
-	fmt.Println("Found message:", foundMessage)
-	// Found message: forge Dominik5e5ZzrPTKu
+	// // Wait for the first valid message
+	// foundMessage := <-resultChan
+	// fmt.Println("Found message:", foundMessage)
+	// // Found message: forge Dominik5e5ZzrPTKu
 
-	// Cancel all remaining goroutines
-	cancel()
+	// // Cancel all remaining goroutines
+	// cancel()
 
-	// Wait for all goroutines to finish
-	wg.Wait()
+	// // Wait for all goroutines to finish
+	// wg.Wait()
 
 	// signature is the preimage from the corresponding row (0,1)
 	// signature has 256x256 (32 Blocks with 8 Bit)
@@ -305,7 +300,7 @@ func look_for_message(ones Message, zeros Message) string {
 				message_not_found = true
 			}
 		}
-		fmt.Println(suprise)
+		//fmt.Println(suprise)
 	}
 	return suprise
 }
@@ -319,8 +314,6 @@ func make_secret_key(signatures []Signature, messages []Message) SecretKey {
 	var message = messages[0]
 	var signature = signatures[0]
 
-	fmt.Printf("%b", message)
-	fmt.Printf("\n -----------------------")
 	for j := range 4 {
 		message = messages[j]
 		signature = signatures[j]
@@ -337,17 +330,11 @@ func make_secret_key(signatures []Signature, messages []Message) SecretKey {
 		}
 	}
 
-	for i := range 256 {
-		fmt.Printf("%d : %x \n", i, sec.OnePre[i])
-		fmt.Printf("%d : %x \n", i, sec.ZeroPre[i])
-		fmt.Printf("---------------------------\n")
-	}
+	//var mymessage = "my forged messsage"
 
-	var mymessage = "my forged messsage"
+	//var mes = GetMessageFromString(mymessage)
 
-	var mes = GetMessageFromString(mymessage)
-
-	fmt.Printf("%b", mes)
+	//fmt.Printf("%b", mes)
 	return sec
 
 }
