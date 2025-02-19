@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
-	"math/big"
+	"runtime"
+	"sync"
 )
 
 /*
@@ -171,9 +173,38 @@ func Forge() (string, Signature, error) {
 	fmt.Printf("%08b \n", ones)
 	fmt.Printf("%08b \n", zeros)
 
-	var doable_message = look_for_message(ones, zeros)
+	//var doable_message = look_for_message(ones, zeros)
 
-	fmt.Println(doable_message)
+	//fmt.Println(doable_message)
+
+	/////////
+
+	// Create context to cancel all goroutines once we find a message
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // Ensure cleanup
+
+	resultChan := make(chan string, 1) // Channel to receive a found message
+	var wg sync.WaitGroup
+
+	// Launch multiple workers (e.g., 5 threads)
+	numWorkers := runtime.NumCPU() // Use all available CPU cores
+	fmt.Printf("Number of CPUs: %d", numWorkers)
+	//numWorkers := 5
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go look_for_message_multi(ctx, ones, zeros, resultChan, &wg)
+	}
+
+	// Wait for the first valid message
+	foundMessage := <-resultChan
+	fmt.Println("Found message:", foundMessage)
+	// Found message: forge Dominik5e5ZzrPTKu
+
+	// Cancel all remaining goroutines
+	cancel()
+
+	// Wait for all goroutines to finish
+	wg.Wait()
 
 	// signature is the preimage from the corresponding row (0,1)
 	// signature has 256x256 (32 Blocks with 8 Bit)
@@ -190,13 +221,63 @@ func Forge() (string, Signature, error) {
 
 }
 
+const asciiCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+func randomASCIIString(length int) (string, error) {
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert bytes to ASCII characters
+	for i := 0; i < length; i++ {
+		bytes[i] = asciiCharset[int(bytes[i])%len(asciiCharset)]
+	}
+
+	return string(bytes), nil
+}
+
 func create_message() string {
 	var base = "forge Dominik"
-	n, err := rand.Int(rand.Reader, big.NewInt(9000000000)) // Range: [0, 8999999999]
+	randomStr, err := randomASCIIString(10) // Generate a 10-character random string
 	if err != nil {
 		panic(err) // Handle error properly in real applications
 	}
-	return base + n.String()
+	return base + randomStr
+}
+func look_for_message_multi(ctx context.Context, ones Message, zeros Message, resultChan chan<- string, wg *sync.WaitGroup) {
+	defer wg.Done() // Signal goroutine completion
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Stop if another goroutine found the message
+			return
+		default:
+			// Generate a message
+			suprise := create_message()
+			supr := GetMessageFromString(suprise)
+			var check_zeros, check_ones Message
+			message_not_found := false
+
+			// Check if the message is correct
+			for i := 0; i < 32; i++ {
+				check_ones[i] = supr[i] & ones[i]
+				check_zeros[i] = supr[i] | zeros[i]
+
+				if check_ones[i] != supr[i] || check_zeros[i] != supr[i] {
+					message_not_found = true
+					break // No need to continue checking
+				}
+			}
+
+			if !message_not_found {
+				resultChan <- suprise // Send the correct message
+				return
+			}
+		}
+	}
 }
 
 func look_for_message(ones Message, zeros Message) string {
